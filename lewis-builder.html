@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lewis Structure Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg-app:#EEF1EA;
+    --panel:#FFFFFF;
+    --ink:#1E2430;
+    --ink-soft:#5C6473;
+    --ink-faint:#93998F;
+    --accent:#2B4FBF;
+    --accent-ink:#16296B;
+    --accent-soft:#DEE6FA;
+    --line:#D8DCCF;
+    --canvas-bg:#FFFEFB;
+    --canvas-grid:#E7E2D2;
+    --charge-plus:#C0392B;
+    --charge-minus:#1E6FA8;
+    --radius-lg:18px;
+    --radius-md:12px;
+    --radius-sm:8px;
+    --shadow:0 1px 2px rgba(30,36,48,.06), 0 6px 16px -6px rgba(30,36,48,.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg-app);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(30,36,48,.045) 1px, transparent 1.4px);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    width:250px;
+    flex:none;
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    padding:22px 18px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  #sidebar h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:20px;
+    line-height:1.15;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  #sidebar h1 span{color:var(--accent);}
+  .tagline{
+    margin:0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+  }
+  .molecule-group h2{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin:0 0 8px 2px;
+  }
+  .molecule-list{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+  }
+  .molecule-btn{
+    all:unset;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 10px;
+    border-radius:var(--radius-sm);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14.5px;
+    color:var(--ink);
+    border:1px solid transparent;
+    transition:background .12s, border-color .12s;
+  }
+  .molecule-btn:hover{background:#F4F5EF;}
+  .molecule-btn.active{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+    color:var(--accent-ink);
+    font-weight:600;
+  }
+  .molecule-btn sub, .molecule-btn sup{font-size:.7em;}
+  .molecule-btn .check{
+    font-size:11px;
+    opacity:0;
+    color:var(--accent);
+  }
+  .molecule-btn.active .check{opacity:1;}
+
+  #info-btn{
+    margin-top:auto;
+    all:unset;
+    cursor:pointer;
+    text-align:center;
+    padding:10px 10px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--line);
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  #info-btn:hover{border-color:var(--accent);color:var(--accent-ink);}
+
+  /* ---------- Main ---------- */
+  main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+  }
+  #target-bar{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:16px 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  #target-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:var(--ink-faint);
+    font-weight:600;
+  }
+  #target-formula{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--accent-ink);
+    flex:1;
+  }
+  #target-formula sub, #target-formula sup{font-size:.62em;}
+  #reset-btn, #copy-btn, #download-btn{
+    all:unset;
+    cursor:pointer;
+    padding:9px 16px;
+    border-radius:999px;
+    background:var(--ink);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    transition:transform .08s, background .12s;
+    white-space:nowrap;
+  }
+  #copy-btn, #download-btn{background:var(--accent);}
+  #copy-btn:hover, #download-btn:hover{background:var(--accent-ink);}
+  #reset-btn:hover{background:var(--accent-ink);}
+  #reset-btn:active, #copy-btn:active, #download-btn:active{transform:scale(.96);}
+  #export-group{display:flex;gap:8px;flex:none;}
+
+  #smiles-panel{
+    flex:none;
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    padding:14px 24px 16px;
+  }
+  #smiles-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  #smiles-header .palette-label{margin:0;}
+  #copy-smiles-btn{
+    all:unset;
+    cursor:pointer;
+    padding:7px 14px;
+    border-radius:999px;
+    background:var(--accent);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:600;
+    transition:transform .08s, background .12s;
+  }
+  #copy-smiles-btn:hover{background:var(--accent-ink);}
+  #copy-smiles-btn:active{transform:scale(.96);}
+  #smiles-output{
+    width:100%;
+    box-sizing:border-box;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    padding:11px 13px;
+    border-radius:var(--radius-sm);
+    border:1.5px solid var(--line);
+    background:#FBFBF6;
+    color:var(--ink);
+    letter-spacing:.02em;
+  }
+  #smiles-output:focus{outline:none;border-color:var(--accent);}
+  #smiles-warning{
+    margin-top:7px;
+    font-size:12px;
+    color:#A85A1E;
+    min-height:15px;
+  }
+    position:fixed;
+    bottom:26px;left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s, transform .18s;
+    z-index:1200;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Palette ---------- */
+  #palette{
+    display:flex;
+    align-items:center;
+    gap:22px;
+    padding:14px 24px;
+    background:#F6F7F1;
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+  }
+  .palette-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    flex:none;
+    writing-mode:horizontal-tb;
+  }
+  .palette-group{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex:none;
+  }
+  .palette-divider{
+    width:1px;
+    align-self:stretch;
+    background:var(--line);
+    flex:none;
+  }
+
+  .piece-atom, .piece-lonepair, .piece-charge{
+    position:absolute;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:none;
+    cursor:grab;
+  }
+
+  /* palette source tokens (not yet placed) */
+  .source-atom{
+    position:relative;
+    width:46px;height:46px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    cursor:grab;
+    touch-action:none;
+    box-shadow:var(--shadow), inset 0 -4px 8px rgba(0,0,0,.12), inset 0 3px 5px rgba(255,255,255,.5);
+    flex:none;
+  }
+  .source-atom .ve-badge{
+    position:absolute;
+    top:-5px;right:-5px;
+    background:var(--ink);
+    color:#fff;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    font-weight:600;
+    width:16px;height:16px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid #F6F7F1;
+  }
+  .source-lonepair, .source-charge{
+    flex:none;
+    width:40px;height:40px;
+    border-radius:var(--radius-sm);
+    background:var(--panel);
+    border:1.5px dashed var(--ink-faint);
+    display:flex;align-items:center;justify-content:center;
+    cursor:grab;
+    touch-action:none;
+  }
+  .source-charge{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:19px;
+  }
+  .source-charge.plus{color:var(--charge-plus); border-style:solid; border-color:#F1CFC8;}
+  .source-charge.minus{color:var(--charge-minus); border-style:solid; border-color:#CBE0EE;}
+
+  .dotpair{display:flex;flex-direction:column;gap:4px;align-items:center;}
+  .dotpair span{width:5px;height:5px;border-radius:50%;background:var(--ink);display:block;}
+
+  /* ---------- Canvas ---------- */
+  #canvas-wrap{
+    flex:1;
+    padding:20px 24px 28px;
+    min-height:0;
+    overflow:auto;
+  }
+  #canvas{
+    position:relative;
+    width:100%;
+    min-height:100%;
+    height:560px;
+    background:
+      linear-gradient(var(--canvas-grid) 1px, transparent 1px) 0 0/32px 32px,
+      linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px) 0 0/32px 32px,
+      var(--canvas-bg);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    box-shadow:inset 0 1px 3px rgba(30,36,48,.05);
+    overflow:hidden;
+  }
+  #empty-hint{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }
+  #empty-hint ol{
+    background:rgba(255,255,255,.85);
+    border:1px dashed var(--line);
+    border-radius:var(--radius-md);
+    padding:16px 22px 16px 30px;
+    color:var(--ink-soft);
+    font-size:13px;
+    line-height:1.9;
+    max-width:380px;
+  }
+  #empty-hint b{color:var(--ink);}
+
+  /* placed atom */
+  .piece-atom .ball{
+    width:56px;height:56px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:18px;
+    box-shadow:0 3px 6px rgba(30,36,48,.18), inset 0 -6px 10px rgba(0,0,0,.14), inset 0 4px 6px rgba(255,255,255,.55);
+  }
+  .piece-atom{width:56px;height:56px;}
+
+  .piece-lonepair{
+    width:26px;height:26px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:grab;
+  }
+  .piece-lonepair .dotpair span{width:5.5px;height:5.5px;background:var(--ink);}
+  .dotpair.horizontal{flex-direction:row;gap:5px;}
+
+  .rotate-handle{
+    position:absolute;
+    top:-8px;left:-8px;
+    width:17px;height:17px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    border:2px solid #fff;
+    font-size:10px;
+    line-height:13px;
+    text-align:center;
+    opacity:0;
+    transition:opacity .12s, transform .12s;
+    cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  .piece-lonepair:hover .rotate-handle{opacity:1;}
+  .rotate-handle:hover{transform:rotate(90deg) scale(1.15);}
+
+  .piece-charge{
+    width:26px;height:26px;
+    border-radius:50%;
+    background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:800;
+    font-size:16px;
+    box-shadow:var(--shadow);
+    cursor:grab;
+  }
+  .piece-charge.plus{color:var(--charge-plus);}
+  .piece-charge.minus{color:var(--charge-minus);}
+
+  .piece-del{
+    position:absolute;
+    top:-7px;right:-7px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    font-size:11px;
+    line-height:18px;
+    text-align:center;
+    opacity:.18;
+    transition:opacity .12s, background .12s;
+    cursor:pointer;
+    font-family:sans-serif;
+  }
+  .piece-atom:hover .piece-del,
+  .piece-lonepair:hover .piece-del,
+  .piece-charge:hover .piece-del{opacity:.9;}
+  .piece-del:hover{background:var(--charge-plus);}
+
+  .bond-handle{
+    position:absolute;
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #fff;
+    right:-4px;bottom:-4px;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+    opacity:0;
+    transition:opacity .12s, transform .12s;
+    cursor:crosshair;
+    touch-action:none;
+  }
+  .piece-atom:hover .bond-handle{opacity:1;}
+  .bond-handle:hover{transform:scale(1.25);}
+
+  #canvas.exporting .piece-del,
+  #canvas.exporting .bond-del,
+  #canvas.exporting .bond-handle,
+  #canvas.exporting .rotate-handle{
+    display:none !important;
+  }
+
+  .bond{
+    position:absolute;
+    left:0;top:0;
+    height:0;
+    pointer-events:none;
+  }
+  .bond .rod{
+    position:absolute;
+    left:0;
+    height:5px;
+    width:100%;
+    background:linear-gradient(to bottom, #fff 0%, #A8AFBD 35%, #6B7386 70%, #4B5266 100%);
+    border-radius:3px;
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+    pointer-events:auto;
+    cursor:pointer;
+  }
+  .bond-del{
+    position:absolute;
+    width:17px;height:17px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    font-size:10px;
+    line-height:17px;
+    text-align:center;
+    opacity:0;
+    pointer-events:auto;
+    cursor:pointer;
+    transition:opacity .12s;
+    font-family:sans-serif;
+  }
+  .bond:hover .bond-del{opacity:.9;}
+  .bond-del:hover{background:var(--charge-plus);}
+
+  .temp-bond .rod{background:repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 10px); box-shadow:none;}
+
+  #ghost-layer{position:fixed;inset:0;pointer-events:none;z-index:999;}
+  .ghost{position:absolute;pointer-events:none;opacity:.92;transform:translate(-50%,-50%);}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(20,24,32,.45);
+    display:flex;align-items:center;justify-content:center;
+    z-index:1000;
+  }
+  .hidden{display:none !important;}
+  .modal{
+    background:var(--panel);
+    border-radius:var(--radius-lg);
+    padding:24px 26px;
+    width:420px;
+    max-width:92vw;
+    max-height:80vh;
+    overflow:auto;
+    box-shadow:0 20px 50px rgba(0,0,0,.3);
+  }
+  .modal h3{
+    font-family:'Space Grotesk',sans-serif;
+    margin:0 0 4px;
+    font-size:18px;
+  }
+  .modal p{color:var(--ink-soft);font-size:12.5px;margin:0 0 14px;}
+  .ve-table{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .ve-cell{
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:8px 6px;
+    text-align:center;
+  }
+  .ve-cell .sym{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;}
+  .ve-cell .ve{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .modal-close{
+    all:unset;cursor:pointer;
+    margin-top:16px;
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:10px;
+    background:var(--ink);
+    color:#fff;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar">
+    <h1>Lewis Structure <span>Builder</span></h1>
+    <p class="tagline">Pick a target, then drag atoms, lone pairs and charges from the bar above the canvas to build its Lewis structure.</p>
+
+    <div class="molecule-group">
+      <h2>Molecules</h2>
+      <div class="molecule-list" id="list-molecules"></div>
+    </div>
+    <div class="molecule-group">
+      <h2>Ions</h2>
+      <div class="molecule-list" id="list-ions"></div>
+    </div>
+
+    <button id="info-btn">📋 Valence electron key</button>
+  </aside>
+
+  <main>
+    <div id="target-bar">
+      <div>
+        <div id="target-label">Now building</div>
+        <div id="target-formula">Choose a molecule →</div>
+      </div>
+      <div id="export-group">
+        <button id="copy-btn">📋 Copy image</button>
+        <button id="download-btn">⬇ Download PNG</button>
+        <button id="reset-btn">Clear canvas</button>
+      </div>
+    </div>
+
+    <div id="palette">
+      <span class="palette-label">Atoms</span>
+      <div class="palette-group" id="palette-atoms"></div>
+      <div class="palette-divider"></div>
+      <span class="palette-label">Lone pair</span>
+      <div class="palette-group">
+        <div class="source-lonepair" id="src-lonepair" title="Drag onto canvas">
+          <span class="dotpair"><span></span><span></span></span>
+        </div>
+      </div>
+      <div class="palette-divider"></div>
+      <span class="palette-label">Charge</span>
+      <div class="palette-group">
+        <div class="source-charge plus" data-sign="+" title="Drag onto canvas">+</div>
+        <div class="source-charge minus" data-sign="&minus;" title="Drag onto canvas">&minus;</div>
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <div id="canvas">
+        <div id="empty-hint">
+          <ol>
+            <li><b>Choose</b> a molecule or ion from the left.</li>
+            <li><b>Drag</b> atoms, lone pairs (••) and charges onto the canvas.</li>
+            <li>Hover an atom and drag its <b>blue dot</b> to another atom to bond them.</li>
+            <li><b>Click</b> a bond to cycle single → double → triple → gone.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div id="smiles-panel">
+      <div id="smiles-header">
+        <span class="palette-label">Quiz answer (updates as you build) — paste into the Canvas text-entry question</span>
+        <button id="copy-smiles-btn">📋 Copy text</button>
+      </div>
+      <input id="smiles-output" type="text" readonly value="Build a structure to generate the answer…">
+      <div id="smiles-warning"></div>
+    </div>
+  </main>
+</div>
+
+<div id="ghost-layer"></div>
+<div id="toast"></div>
+
+<div class="modal-backdrop hidden" id="ve-modal">
+  <div class="modal">
+    <h3>Valence electrons</h3>
+    <p>The number on each atom token is its count of valence electrons — use it to figure out how many dots and bonds each atom needs.</p>
+    <div class="ve-table" id="ve-table"></div>
+    <button class="modal-close" id="ve-close">Got it</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Data ----------
+  const ELEMENTS = {
+    H:  {ve:1, color:'#F4F4F0', text:'#1E2430'},
+    Be: {ve:2, color:'#8E7A46', text:'#FFFFFF'},
+    B:  {ve:3, color:'#F0A9A0', text:'#1E2430'},
+    Al: {ve:3, color:'#B9ADAE', text:'#1E2430'},
+    C:  {ve:4, color:'#3B3F45', text:'#FFFFFF'},
+    N:  {ve:5, color:'#2E4FE0', text:'#FFFFFF'},
+    P:  {ve:5, color:'#E38A2E', text:'#1E2430'},
+    O:  {ve:6, color:'#E0362E', text:'#FFFFFF'},
+    S:  {ve:6, color:'#E4CD3B', text:'#1E2430'},
+    F:  {ve:7, color:'#7FDD7A', text:'#1E2430'},
+    Cl: {ve:7, color:'#39C93F', text:'#FFFFFF'},
+    Br: {ve:7, color:'#9A3A1E', text:'#FFFFFF'},
+    I:  {ve:7, color:'#7A1FA2', text:'#FFFFFF'}
+  };
+  const PALETTE_ORDER = ['H','Be','B','Al','C','N','P','O','S','F','Cl','Br','I'];
+
+  const MOLECULES = [
+    {f:'BeF2', h:'BeF<sub>2</sub>'},
+    {f:'CCl4', h:'CCl<sub>4</sub>'},
+    {f:'BCl3', h:'BCl<sub>3</sub>'},
+    {f:'CH2Cl2', h:'CH<sub>2</sub>Cl<sub>2</sub>'},
+    {f:'AlCl3', h:'AlCl<sub>3</sub>'},
+    {f:'NH3', h:'NH<sub>3</sub>'},
+    {f:'PBr5', h:'PBr<sub>5</sub>'},
+    {f:'H2O', h:'H<sub>2</sub>O'},
+    {f:'SI6', h:'SI<sub>6</sub>'},
+    {f:'NI3', h:'NI<sub>3</sub>'}
+  ];
+  const IONS = [
+    {f:'BH2-', h:'BH<sub>2</sub><sup>&minus;</sup>'},
+    {f:'NH4+', h:'NH<sub>4</sub><sup>+</sup>'},
+    {f:'ClF4+', h:'ClF<sub>4</sub><sup>+</sup>'},
+    {f:'SF5-', h:'SF<sub>5</sub><sup>&minus;</sup>'}
+  ];
+
+  // ---------- State ----------
+  let pieces = [];   // {id, type:'atom'|'lonepair'|'charge', el, sign, x, y}
+  let bonds = [];    // {id, a, b, order}
+  let nextId = 1;
+
+  const canvas = document.getElementById('canvas');
+  const emptyHint = document.getElementById('empty-hint');
+  const ghostLayer = document.getElementById('ghost-layer');
+
+  const ATOM_R = 28;
+
+  // ---------- Build palette ----------
+  const paletteAtoms = document.getElementById('palette-atoms');
+  PALETTE_ORDER.forEach(sym=>{
+    const d = ELEMENTS[sym];
+    const el = document.createElement('div');
+    el.className = 'source-atom';
+    el.style.background = d.color;
+    el.style.color = d.text;
+    el.dataset.el = sym;
+    el.innerHTML = sym + '<span class="ve-badge">'+d.ve+'</span>';
+    el.addEventListener('pointerdown', e=> startGhostDrag(e, 'atom', {el:sym}));
+    paletteAtoms.appendChild(el);
+  });
+  document.getElementById('src-lonepair').addEventListener('pointerdown', e=> startGhostDrag(e,'lonepair',{}));
+  document.querySelectorAll('.source-charge').forEach(el=>{
+    el.addEventListener('pointerdown', e=> startGhostDrag(e,'charge',{sign:el.dataset.sign}));
+  });
+
+  // ---------- Build sidebar molecule lists ----------
+  function buildList(container, items){
+    items.forEach(item=>{
+      const btn = document.createElement('button');
+      btn.className = 'molecule-btn';
+      btn.innerHTML = '<span>'+item.h+'</span><span class="check">✓</span>';
+      btn.addEventListener('click', ()=> selectTarget(item, btn));
+      container.appendChild(btn);
+    });
+  }
+  buildList(document.getElementById('list-molecules'), MOLECULES);
+  buildList(document.getElementById('list-ions'), IONS);
+
+  function selectTarget(item, btn){
+    document.querySelectorAll('.molecule-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('target-formula').innerHTML = item.h;
+    clearCanvas();
+  }
+
+  // ---------- Reset ----------
+  document.getElementById('reset-btn').addEventListener('click', clearCanvas);
+  function clearCanvas(){
+    pieces = [];
+    bonds = [];
+    renderAll();
+  }
+
+  // ---------- Info modal ----------
+  const veModal = document.getElementById('ve-modal');
+  document.getElementById('info-btn').addEventListener('click', ()=>{
+    const table = document.getElementById('ve-table');
+    table.innerHTML='';
+    PALETTE_ORDER.forEach(sym=>{
+      const d = ELEMENTS[sym];
+      const cell = document.createElement('div');
+      cell.className='ve-cell';
+      cell.innerHTML = '<div class="sym">'+sym+'</div><div class="ve">'+d.ve+' ve&minus;</div>';
+      table.appendChild(cell);
+    });
+    veModal.classList.remove('hidden');
+  });
+  document.getElementById('ve-close').addEventListener('click', ()=> veModal.classList.add('hidden'));
+  veModal.addEventListener('click', e=>{ if(e.target===veModal) veModal.classList.add('hidden'); });
+
+  // ---------- Ghost drag from palette ----------
+  function startGhostDrag(e, type, extra){
+    e.preventDefault();
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.appendChild(makePieceVisual(type, extra));
+    ghostLayer.appendChild(ghost);
+    positionGhost(ghost, e.clientX, e.clientY);
+
+    let lastX = e.clientX, lastY = e.clientY;
+
+    function onMove(ev){
+      lastX = ev.clientX; lastY = ev.clientY;
+      positionGhost(ghost, ev.clientX, ev.clientY);
+    }
+    function onUp(ev){
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      ghost.remove();
+      const rect = canvas.getBoundingClientRect();
+      if(lastX >= rect.left && lastX <= rect.right && lastY >= rect.top && lastY <= rect.bottom){
+        const x = lastX - rect.left + canvas.scrollLeft;
+        const y = lastY - rect.top + canvas.scrollTop;
+        addPiece(type, extra, x, y);
+      }
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, {once:true});
+  }
+  function positionGhost(ghost, x, y){
+    ghost.style.left = x+'px';
+    ghost.style.top = y+'px';
+  }
+  function makePieceVisual(type, extra){
+    if(type==='atom'){
+      const d = ELEMENTS[extra.el];
+      const wrap = document.createElement('div');
+      wrap.style.width='56px'; wrap.style.height='56px';
+      wrap.innerHTML = '<div class="ball" style="background:'+d.color+';color:'+d.text+'">'+extra.el+'</div>';
+      return wrap;
+    }
+    if(type==='lonepair'){
+      const wrap = document.createElement('div');
+      wrap.style.width='26px'; wrap.style.height='26px';
+      wrap.innerHTML = '<div class="dotpair horizontal"><span></span><span></span></div>';
+      return wrap;
+    }
+    const wrap = document.createElement('div');
+    wrap.style.width='26px'; wrap.style.height='26px';
+    wrap.className = 'piece-charge ' + (extra.sign==='+' ? 'plus':'minus');
+    wrap.style.position='relative';
+    wrap.textContent = extra.sign;
+    return wrap;
+  }
+
+  // ---------- Piece management ----------
+  function addPiece(type, extra, x, y){
+    const p = Object.assign({id:'p'+(nextId++), type, x, y}, extra);
+    if(type==='lonepair') p.orientation = 'h';
+    pieces.push(p);
+    renderAll();
+  }
+  function removePiece(id){
+    pieces = pieces.filter(p=>p.id!==id);
+    bonds = bonds.filter(b=> b.a!==id && b.b!==id);
+    renderAll();
+  }
+  function getPiece(id){ return pieces.find(p=>p.id===id); }
+
+  // ---------- Bonds ----------
+  function addOrCycleBond(aId,bId){
+    if(aId===bId) return;
+    let bond = bonds.find(b=> (b.a===aId&&b.b===bId) || (b.a===bId&&b.b===aId));
+    if(bond){
+      bond.order = bond.order>=3 ? 0 : bond.order+1;
+      if(bond.order===0) bonds = bonds.filter(b=>b!==bond);
+    } else {
+      bonds.push({id:'b'+(nextId++), a:aId, b:bId, order:1});
+    }
+    renderAll();
+  }
+  function cycleBond(bond){
+    bond.order = bond.order>=3 ? 1 : bond.order+1;
+    renderAll();
+  }
+  function removeBond(bond){
+    bonds = bonds.filter(b=>b!==bond);
+    renderAll();
+  }
+
+  // ---------- Rendering ----------
+  function renderAll(){
+    canvas.querySelectorAll('.piece-atom,.piece-lonepair,.piece-charge,.bond').forEach(n=>n.remove());
+    emptyHint.style.display = pieces.length ? 'none' : 'flex';
+
+    bonds.forEach(renderBond);
+    pieces.forEach(renderPiece);
+    if(typeof updateAnswerOutput==='function') updateAnswerOutput();
+  }
+
+  function renderPiece(p){
+    let el;
+    if(p.type==='atom'){
+      const d = ELEMENTS[p.el];
+      el = document.createElement('div');
+      el.className='piece-atom';
+      el.innerHTML =
+        '<div class="ball" style="background:'+d.color+';color:'+d.text+'">'+p.el+'</div>'+
+        '<div class="bond-handle" data-role="bond-handle"></div>'+
+        '<div class="piece-del" data-role="del">&times;</div>';
+    } else if(p.type==='lonepair'){
+      el = document.createElement('div');
+      el.className='piece-lonepair';
+      const orientClass = p.orientation==='v' ? '' : 'horizontal';
+      el.innerHTML = '<div class="dotpair '+orientClass+'"><span></span><span></span></div>'+
+        '<div class="rotate-handle" data-role="rotate" title="Rotate">&#8635;</div>'+
+        '<div class="piece-del" data-role="del">&times;</div>';
+    } else {
+      el = document.createElement('div');
+      el.className='piece-charge ' + (p.sign==='+'?'plus':'minus');
+      el.textContent = p.sign;
+      el.insertAdjacentHTML('beforeend','<div class="piece-del" data-role="del">&times;</div>');
+    }
+    el.style.left = (p.x - (p.type==='atom'?28:13)) + 'px';
+    el.style.top = (p.y - (p.type==='atom'?28:13)) + 'px';
+    el.dataset.id = p.id;
+    canvas.appendChild(el);
+
+    el.addEventListener('pointerdown', e=>{
+      if(e.target.dataset.role==='del' || e.target.dataset.role==='bond-handle' || e.target.dataset.role==='rotate') return;
+      startMovePiece(e, p);
+    });
+    const delBtn = el.querySelector('[data-role="del"]');
+    if(delBtn) delBtn.addEventListener('pointerdown', e=>{ e.stopPropagation(); });
+    if(delBtn) delBtn.addEventListener('click', e=>{ e.stopPropagation(); removePiece(p.id); });
+
+    if(p.type==='atom'){
+      const handle = el.querySelector('[data-role="bond-handle"]');
+      handle.addEventListener('pointerdown', e=>{ e.stopPropagation(); startBondDraft(e, p); });
+    }
+    if(p.type==='lonepair'){
+      const rotateBtn = el.querySelector('[data-role="rotate"]');
+      rotateBtn.addEventListener('pointerdown', e=>{ e.stopPropagation(); });
+      rotateBtn.addEventListener('click', e=>{
+        e.stopPropagation();
+        p.orientation = p.orientation==='v' ? 'h' : 'v';
+        renderAll();
+      });
+    }
+  }
+
+  function startMovePiece(e, p){
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    function onMove(ev){
+      p.x = ev.clientX - rect.left + canvas.scrollLeft;
+      p.y = ev.clientY - rect.top + canvas.scrollTop;
+      p.x = Math.max(14, Math.min(canvas.scrollWidth-14, p.x));
+      p.y = Math.max(14, Math.min(canvas.clientHeight-14, p.y));
+      renderAll();
+    }
+    function onUp(){
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function startBondDraft(e, fromPiece){
+    const rect = canvas.getBoundingClientRect();
+    const tempId = 't'+(nextId++);
+    let curX = fromPiece.x, curY = fromPiece.y;
+
+    function draw(){
+      let el = canvas.querySelector('.temp-bond');
+      if(!el){
+        el = document.createElement('div');
+        el.className='bond temp-bond';
+        el.innerHTML = '<div class="rod"></div>';
+        canvas.appendChild(el);
+      }
+      positionBondEl(el, fromPiece.x, fromPiece.y, curX, curY, 0);
+    }
+    draw();
+
+    function onMove(ev){
+      curX = ev.clientX - rect.left + canvas.scrollLeft;
+      curY = ev.clientY - rect.top + canvas.scrollTop;
+      draw();
+    }
+    function onUp(ev){
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      const t = canvas.querySelector('.temp-bond');
+      if(t) t.remove();
+      const target = document.elementFromPoint(ev.clientX, ev.clientY);
+      const atomEl = target ? target.closest('.piece-atom') : null;
+      if(atomEl && atomEl.dataset.id !== fromPiece.id){
+        addOrCycleBond(fromPiece.id, atomEl.dataset.id);
+      }
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function positionBondEl(el, x1,y1,x2,y2, inset){
+    const dx=x2-x1, dy=y2-y1;
+    const len = Math.max(2, Math.sqrt(dx*dx+dy*dy));
+    const angle = Math.atan2(dy,dx)*180/Math.PI;
+    const trimmed = Math.max(2, len - inset*2);
+    const sx = x1 + Math.cos(angle*Math.PI/180)*inset;
+    const sy = y1 + Math.sin(angle*Math.PI/180)*inset;
+    el.style.left = sx+'px';
+    el.style.top = sy+'px';
+    el.style.width = trimmed+'px';
+    el.style.transform = 'rotate('+angle+'deg)';
+    el.style.transformOrigin = '0 50%';
+    return {len:trimmed, angle};
+  }
+
+  function renderBond(b){
+    const a = getPiece(b.a), c = getPiece(b.b);
+    if(!a || !c) return;
+    const el = document.createElement('div');
+    el.className='bond';
+    canvas.appendChild(el);
+    const geo = positionBondEl(el, a.x, a.y, c.x, c.y, ATOM_R-2);
+
+    const gaps = {1:[0], 2:[-5,5], 3:[-8,0,8]};
+    gaps[b.order].forEach(offset=>{
+      const rod = document.createElement('div');
+      rod.className='rod';
+      rod.style.top = offset+'px';
+      rod.addEventListener('click', ()=> cycleBond(b));
+      el.appendChild(rod);
+    });
+
+    const del = document.createElement('div');
+    del.className='bond-del';
+    del.innerHTML='&times;';
+    del.style.left = (geo.len/2 - 8)+'px';
+    del.style.top = '-16px';
+    del.addEventListener('click', (e)=>{ e.stopPropagation(); removeBond(b); });
+    el.appendChild(del);
+  }
+
+  // ---------- SMILES-with-lone-pairs generation ----------
+  const ATTACH_MAX_DIST = 78;
+
+  function buildAnswerString(){
+    const atoms = pieces.filter(p=>p.type==='atom');
+    const lonepairs = pieces.filter(p=>p.type==='lonepair');
+    const charges = pieces.filter(p=>p.type==='charge');
+    const warnings = [];
+
+    if(atoms.length===0){
+      return {text:'', warning:''};
+    }
+
+    // attach lone pairs / charges to nearest atom within range
+    const lpCount = {};   // atomId -> count
+    const chargeSum = {}; // atomId -> number
+    atoms.forEach(a=>{ lpCount[a.id]=0; chargeSum[a.id]=0; });
+
+    function nearestAtom(piece){
+      let best=null, bestD=Infinity;
+      atoms.forEach(a=>{
+        const d = Math.hypot(a.x-piece.x, a.y-piece.y);
+        if(d<bestD){bestD=d; best=a;}
+      });
+      return (best && bestD<=ATTACH_MAX_DIST) ? best : null;
+    }
+
+    let unattached = 0;
+    lonepairs.forEach(lp=>{
+      const a = nearestAtom(lp);
+      if(a) lpCount[a.id]++; else unattached++;
+    });
+    charges.forEach(c=>{
+      const a = nearestAtom(c);
+      if(a) chargeSum[a.id] += (c.sign==='+'?1:-1); else unattached++;
+    });
+    if(unattached>0){
+      warnings.push(unattached + ' lone pair / charge piece' + (unattached>1?'s are':' is') + " too far from any atom to count — drag it closer.");
+    }
+
+    // adjacency
+    const adj = {};
+    atoms.forEach(a=> adj[a.id]=[]);
+    bonds.forEach(b=>{
+      if(!adj[b.a] || !adj[b.b]) return;
+      adj[b.a].push({to:b.b, order:b.order});
+      adj[b.b].push({to:b.a, order:b.order});
+    });
+
+    function atomById(id){ return atoms.find(a=>a.id===id); }
+
+    function chargeToken(n){
+      if(n===0) return '';
+      if(n===1) return '+';
+      if(n===-1) return '-';
+      return (n>0?'+':'-') + Math.abs(n);
+    }
+    function bondToken(order){
+      return order===2 ? '=' : order===3 ? '#' : '';
+    }
+    function atomToken(a){
+      return '[' + a.el + chargeToken(chargeSum[a.id]) + ']' + ':'.repeat(lpCount[a.id]);
+    }
+
+    const visited = new Set();
+
+    function neighborSort(list){
+      return list.slice().sort((n1,n2)=>{
+        const a1=atomById(n1.to), a2=atomById(n2.to);
+        if(a1.el!==a2.el) return a1.el<a2.el?-1:1;
+        if(n1.order!==n2.order) return n2.order-n1.order;
+        if(lpCount[a1.id]!==lpCount[a2.id]) return lpCount[a1.id]-lpCount[a2.id];
+        return a1.id<a2.id?-1:1;
+      });
+    }
+
+    function dfs(id, cameFrom){
+      visited.add(id);
+      const a = atomById(id);
+      const nbrs = neighborSort(adj[id].filter(n=> n.to!==cameFrom && !visited.has(n.to)));
+      const token = atomToken(a);
+      if(nbrs.length===0) return token;
+      const parts = nbrs.map(n=> bondToken(n.order) + dfs(n.to, id));
+      const last = parts.pop();
+      return token + parts.map(p=>'('+p+')').join('') + last;
+    }
+
+    // pick a root per connected component = highest-degree atom (most bonded / most central)
+    const components = [];
+    atoms.forEach(a=>{
+      if(visited.has(a.id)) return;
+      // find all atoms in this component via BFS
+      const compIds = [];
+      const stack=[a.id]; const seen=new Set([a.id]);
+      while(stack.length){
+        const cur = stack.pop();
+        compIds.push(cur);
+        (adj[cur]||[]).forEach(n=>{ if(!seen.has(n.to)){ seen.add(n.to); stack.push(n.to);} });
+      }
+      let root = compIds.map(atomById).sort((x,y)=>{
+        const dx = adj[x.id].length, dy = adj[y.id].length;
+        if(dx!==dy) return dy-dx;
+        if(x.el!==y.el) return x.el<y.el?-1:1;
+        return x.id<y.id?-1:1;
+      })[0];
+      components.push(dfs(root.id, null));
+    });
+
+    components.sort();
+    return {text: components.join('.'), warning: warnings.join(' ')};
+  }
+
+  function updateAnswerOutput(){
+    const out = document.getElementById('smiles-output');
+    const warn = document.getElementById('smiles-warning');
+    const result = buildAnswerString();
+    out.value = result.text || 'Build a structure to generate the answer…';
+    warn.textContent = result.warning || '';
+  }
+
+  document.getElementById('copy-smiles-btn').addEventListener('click', ()=>{
+    const out = document.getElementById('smiles-output');
+    if(!out.value || out.value.startsWith('Build a structure')){ showToast('Build something first'); return; }
+    out.select();
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(out.value)
+        .then(()=> showToast('Copied — paste into the quiz'))
+        .catch(()=> document.execCommand('copy'));
+    } else {
+      document.execCommand('copy');
+      showToast('Copied — paste into the quiz');
+    }
+  });
+
+  // ---------- Export ----------
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.classList.remove('show'), 2200);
+  }
+
+  function captureCanvas(){
+    canvas.classList.add('exporting');
+    return html2canvas(canvas, {backgroundColor:'#FFFEFB', scale:2})
+      .finally(()=> canvas.classList.remove('exporting'));
+  }
+
+  function fileNameForTarget(){
+    const active = document.querySelector('.molecule-btn.active');
+    const raw = active ? active.textContent.replace(/[^A-Za-z0-9]/g,'') : 'lewis-structure';
+    return (raw || 'lewis-structure') + '.png';
+  }
+
+  document.getElementById('download-btn').addEventListener('click', ()=>{
+    if(!pieces.length){ showToast('Build something first'); return; }
+    captureCanvas().then(rendered=>{
+      const link = document.createElement('a');
+      link.download = fileNameForTarget();
+      link.href = rendered.toDataURL('image/png');
+      link.click();
+      showToast('Downloaded');
+    });
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', ()=>{
+    if(!pieces.length){ showToast('Build something first'); return; }
+    captureCanvas().then(rendered=>{
+      rendered.toBlob(blob=>{
+        if(!blob) return;
+        if(navigator.clipboard && window.ClipboardItem){
+          navigator.clipboard.write([new ClipboardItem({'image/png': blob})])
+            .then(()=> showToast('Copied — paste it into your quiz'))
+            .catch(()=> showToast('Copy blocked — use Download PNG instead'));
+        } else {
+          showToast('Copy not supported here — use Download PNG instead');
+        }
+      });
+    });
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
