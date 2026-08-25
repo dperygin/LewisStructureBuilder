@@ -549,11 +549,107 @@
     font-size:13px;
     font-weight:600;
   }
+
+  /* ---------- Mobile / touch ---------- */
+  #menu-toggle{
+    display:none;
+    all:unset;
+    cursor:pointer;
+    flex:none;
+    padding:9px 14px;
+    border-radius:999px;
+    background:var(--ink);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    touch-action:manipulation;
+  }
+  #sidebar-backdrop{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(20,24,32,.42);
+    z-index:400;
+  }
+
+  /* Always-visible, larger hit targets on touch/coarse-pointer devices,
+     since :hover never fires to reveal them. */
+  @media (hover:none), (pointer:coarse){
+    .piece-del{
+      opacity:.85;
+      width:24px;height:24px;
+      line-height:24px;
+      font-size:14px;
+      top:-9px;right:-9px;
+    }
+    .bond-handle{
+      opacity:.9;
+      width:20px;height:20px;
+      right:-6px;bottom:-6px;
+    }
+    .rotate-handle{
+      opacity:.9;
+      width:22px;height:22px;
+      line-height:18px;
+      font-size:12px;
+      top:-10px;left:-10px;
+    }
+    .bond-del{ opacity:.75; }
+    .source-atom, .source-lonepair, .source-charge{ touch-action:none; }
+  }
+
+  @media (max-width:900px){
+    #app{position:relative; overflow-x:hidden;}
+    #menu-toggle{display:flex; align-items:center;}
+    #sidebar{
+      position:fixed;
+      top:0; left:0; bottom:0;
+      width:270px;
+      max-width:82vw;
+      z-index:500;
+      transform:translateX(-105%);
+      transition:transform .22s ease;
+      box-shadow:0 0 40px rgba(0,0,0,.28);
+    }
+    #sidebar.open{transform:translateX(0);}
+    #sidebar-backdrop.show{display:block;}
+
+    #target-bar{
+      padding:12px 14px;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    #target-formula{font-size:20px;}
+    #export-group{width:100%; justify-content:flex-start; flex-wrap:wrap;}
+    #copy-btn, #download-btn, #reset-btn{padding:8px 13px; font-size:12.5px;}
+
+    #palette{
+      padding:10px 14px;
+      gap:14px;
+    }
+    .palette-label{font-size:9px;}
+
+    #canvas-wrap{padding:12px 14px 18px;}
+    #canvas{height:420px;}
+
+    #smiles-panel{padding:12px 14px 14px;}
+    #smiles-header{flex-wrap:wrap; gap:8px;}
+    #smiles-output{font-size:13px;}
+  }
+
+  @media (max-width:520px){
+    #sidebar h1{font-size:18px;}
+    .source-atom{width:42px;height:42px;font-size:14px;}
+    #target-formula{font-size:18px;}
+    #canvas{height:360px;}
+    .palette-label{display:none;}
+    .palette-divider{margin:0 2px;}
+  }
 </style>
 </head>
 <body>
 
 <div id="app">
+  <div id="sidebar-backdrop"></div>
   <aside id="sidebar">
     <h1>Lewis Structure <span>Builder</span></h1>
     <p class="tagline">Pick a target, then drag atoms, lone pairs and charges from the bar above the canvas to build its Lewis structure.</p>
@@ -572,6 +668,7 @@
 
   <main>
     <div id="target-bar">
+      <button id="menu-toggle" title="Molecules">☰ Molecules</button>
       <div>
         <div id="target-label">Now building</div>
         <div id="target-formula">Choose a molecule →</div>
@@ -725,7 +822,17 @@
     btn.classList.add('active');
     document.getElementById('target-formula').innerHTML = item.h;
     clearCanvas();
+    closeSidebar();
   }
+
+  // ---------- Mobile drawer ----------
+  const sidebarEl = document.getElementById('sidebar');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  const menuToggle = document.getElementById('menu-toggle');
+  function openSidebar(){ sidebarEl.classList.add('open'); sidebarBackdrop.classList.add('show'); }
+  function closeSidebar(){ sidebarEl.classList.remove('open'); sidebarBackdrop.classList.remove('show'); }
+  menuToggle.addEventListener('click', openSidebar);
+  sidebarBackdrop.addEventListener('click', closeSidebar);
 
   // ---------- Reset ----------
   document.getElementById('reset-btn').addEventListener('click', clearCanvas);
