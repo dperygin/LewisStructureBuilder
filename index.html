@@ -623,10 +623,31 @@
     #copy-btn, #download-btn, #reset-btn{padding:8px 13px; font-size:12.5px;}
 
     #palette{
-      padding:10px 14px;
-      gap:14px;
+      display:grid;
+      grid-template-columns:auto auto;
+      grid-template-rows:auto auto;
+      column-gap:14px;
+      row-gap:10px;
+      justify-content:center;
+      align-items:start;
+      overflow-x:visible;
+      padding:12px 14px;
     }
-    .palette-label{font-size:9px;}
+    #palette .palette-label,
+    #palette .palette-divider{ display:none; }
+    #palette-atoms{
+      grid-column:1;
+      grid-row:1 / span 2;
+      display:flex;
+      flex-direction:column;
+      flex-wrap:wrap;
+      max-height:392px;
+      column-gap:10px;
+      row-gap:10px;
+      align-content:flex-start;
+    }
+    #palette-lonepair{ grid-column:2; grid-row:1; justify-content:center; }
+    #palette-charges{ grid-column:2; grid-row:2; justify-content:center; }
 
     #canvas-wrap{padding:12px 14px 18px;}
     #canvas{height:420px;}
@@ -641,8 +662,6 @@
     .source-atom{width:42px;height:42px;font-size:14px;}
     #target-formula{font-size:18px;}
     #canvas{height:360px;}
-    .palette-label{display:none;}
-    .palette-divider{margin:0 2px;}
   }
 </style>
 </head>
@@ -685,14 +704,14 @@
       <div class="palette-group" id="palette-atoms"></div>
       <div class="palette-divider"></div>
       <span class="palette-label">Lone pair</span>
-      <div class="palette-group">
+      <div class="palette-group" id="palette-lonepair">
         <div class="source-lonepair" id="src-lonepair" title="Drag onto canvas">
           <span class="dotpair"><span></span><span></span></span>
         </div>
       </div>
       <div class="palette-divider"></div>
       <span class="palette-label">Charge</span>
-      <div class="palette-group">
+      <div class="palette-group" id="palette-charges">
         <div class="source-charge plus" data-sign="+" title="Drag onto canvas">+</div>
         <div class="source-charge minus" data-sign="&minus;" title="Drag onto canvas">&minus;</div>
       </div>
